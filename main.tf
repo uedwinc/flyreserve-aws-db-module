@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 # Lookup the EKS cluster that we created for the Microservices
-data "aws_eks_cluster" "microservice-cluster" {
+data "aws_eks_cluster" "flyreserve-cluster" {
   name = "${var.eks_id}"
 }
 
@@ -25,7 +25,7 @@ resource "aws_security_group" "db-security-group" {
     to_port     = 0
     protocol    = "-1"
     self        = true
-    #security_groups = data.aws_eks_cluster.microservice-cluster.vpc_config.0.security_group_ids
+    #security_groups = data.aws_eks_cluster.flyreserve-cluster.vpc_config.0.security_group_ids
   }
 }
 
@@ -75,15 +75,15 @@ resource "aws_elasticache_cluster" "redis-db" {
 }
 
 # Setup a Route53 DNS entry for RDS routing
-#data "aws_route53_zone" "private-zone" {
-#  zone_id      = var.route53_id
-#  private_zone = true
-#}
-#
-#resource "aws_route53_record" "rds-instance" {
-#  zone_id = var.route53_id
-#  name    = "rds.${data.aws_route53_zone.private-zone.name}"
-#  type    = "CNAME"
-#  ttl     = "300"
-#  records = [aws_db_instance.mysql-db.address]
-#}
+data "aws_route53_zone" "private-zone" {
+  name         = "flyreserve.com"
+  private_zone = true
+}
+
+resource "aws_route53_record" "rds-instance" {
+  zone_id = data.aws_route53_zone.private-zone.zone_id
+  name    = "rds.${data.aws_route53_zone.private-zone.name}"
+  type    = "CNAME"
+  ttl     = "300"
+  records = [aws_db_instance.mysql-db.address]
+}
